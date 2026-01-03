@@ -1,8 +1,13 @@
-import { defineConfig } from 'vitepress'
+// import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
-export default defineConfig({
-  title: "VitePress Project",
+
+const base = "/withyy/";
+
+// export default defineConfig({
+export default ({
+  base,
+  title: "MyBlog",
   description: "A VitePress Site",
   outDir: "dist", 
   srcDir: "src",
@@ -15,7 +20,7 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'Examples',
+        text: 'Guide',
         items: [
           { text: 'Markdown Examples', link: '/markdown-examples' },
           { text: 'Runtime API Examples', link: '/api-examples' }
@@ -28,3 +33,5 @@ export default defineConfig({
     ]
   }
 })
+
+
