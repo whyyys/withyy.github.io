@@ -2,7 +2,7 @@
 
 // https://vitepress.dev/reference/site-config
 
-const base = "/withyy/";
+const base = "/MyBlog/";
 
 // export default defineConfig({
 export default ({
