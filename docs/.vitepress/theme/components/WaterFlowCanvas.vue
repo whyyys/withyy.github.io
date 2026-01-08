@@ -8,12 +8,12 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const canvas = ref<HTMLCanvasElement>()
 let ctx: CanvasRenderingContext2D
 let raf = 0
+let time = 0
 
 /* ---------- 网格参数 ---------- */
-const edge = 26            // 三角形边长（像素）
+const edge = 50            // 三角形边长（像素），平衡密度和内存
 const hEdge = edge * 0.866 // 等高三角形高度
-const grid: Triangle[] = []
-const dots: Dot[] = []
+const triangles: Triangle[] = []
 
 class Dot {
   x: number; y: number
@@ -23,7 +23,12 @@ class Dot {
 
 class Triangle {
   a: Dot; b: Dot; c: Dot
-  constructor (a: Dot, b: Dot, c: Dot) { this.a = a; this.b = b; this.c = c }
+  vx: number; vy: number // 整体速度
+  constructor (a: Dot, b: Dot, c: Dot) { 
+    this.a = a; this.b = b; this.c = c
+    this.vx = (Math.random() - 0.5) * 0.6
+    this.vy = (Math.random() - 0.5) * 0.6
+  }
   /* 计算重心到鼠标距离 */
   dist (mx: number, my: number) {
     const cx = (this.a.x + this.b.x + this.c.x) / 3
@@ -32,83 +37,99 @@ class Triangle {
   }
 }
 
-/* ---------- 生成整个屏幕的等边三角网格 ---------- */
+/* ---------- 生成随机三角形 ---------- */
 function buildGrid () {
-  grid.length = 0
-  dots.length = 0
-  const cols = Math.ceil(innerWidth / edge) + 2
-  const rows = Math.ceil(innerHeight / hEdge) + 2
-  /* 先建点阵 */
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const x = col * edge + (row % 2 ? edge / 2 : 0)
-      const y = row * hEdge
-      dots.push(new Dot(x, y))
-    }
+  triangles.length = 0
+  const area = innerWidth * innerHeight
+  const numTriangles = Math.min(100, Math.max(50, Math.floor(area / 10000))) // 更多数量，营造凌乱效果
+  for (let i = 0; i < numTriangles; i++) {
+    const centerX = Math.random() * innerWidth
+    const centerY = Math.random() * innerHeight
+    const size = 35 // 保持尺寸
+    const a = new Dot(centerX + (Math.random() - 0.5) * size, centerY + (Math.random() - 0.5) * size)
+    const b = new Dot(centerX + (Math.random() - 0.5) * size, centerY + (Math.random() - 0.5) * size)
+    const c = new Dot(centerX + (Math.random() - 0.5) * size, centerY + (Math.random() - 0.5) * size)
+    const t = new Triangle(a, b, c)
+    triangles.push(t)
   }
-  /* 再连三角形 */
-  for (let row = 0; row < rows - 1; row++) {
-    for (let col = 0; col < cols - 1; col++) {
-      const i = row * cols + col
-      const up = row % 2
-      if (up) {
-        grid.push(new Triangle(dots[i], dots[i + 1], dots[i + cols]))
-        grid.push(new Triangle(dots[i + 1], dots[i + cols], dots[i + cols + 1]))
-      } else {
-        grid.push(new Triangle(dots[i], dots[i + cols], dots[i + cols + 1]))
-        grid.push(new Triangle(dots[i], dots[i + 1], dots[i + cols + 1]))
-      }
-    }
+}
+
+let frame = 0
+let lastCatTime = 0
+const cats: Cat[] = []
+
+class Cat {
+  x: number; y: number
+  speed: number
+  constructor() {
+    this.x = -50
+    this.y = innerHeight / 2 + (Math.random() - 0.5) * 200
+    this.speed = 2 + Math.random() * 2
   }
 }
 
 /* ---------- 动画循环 ---------- */
 let mouse = { x: -999, y: -999 }
 
-function loop () {
-  /* 不填充背景 → 保留透明 */
+function loop (timestamp: number) {
+  time = timestamp * 0.001 // 秒
+  frame++
   ctx.clearRect(0, 0, innerWidth, innerHeight)
 
-  /* 1. 更新 glow */
-  const maxDist = 120
-  for (const t of grid) {
+  /* 更新 glow */
+  const maxDist = 80 // 扩大范围
+  for (const t of triangles) {
     const d = t.dist(mouse.x, mouse.y)
-    const target = d < maxDist ? 1 - d / maxDist : 0
-    // 平滑逼近
-    t.a.glow += (target - t.a.glow) * 0.08
-    t.b.glow += (target - t.b.glow) * 0.08
-    t.c.glow += (target - t.c.glow) * 0.08
+    const target = d < maxDist ? Math.max(0.1, 1 - d / maxDist) : 0.05  // 最低发光
+    t.a.glow += (target - t.a.glow) * 0.1
+    t.b.glow += (target - t.b.glow) * 0.1
+    t.c.glow += (target - t.c.glow) * 0.1
   }
 
-  /* 2. 画连线（发光越强越亮） */
-  ctx.lineWidth = 1.2
-  for (const t of grid) {
+  /* 每隔一段时间随机改变方向 */
+  if (frame % 300 === 0) { // 每300帧改变一次
+    for (const t of triangles) {
+      if (Math.random() < 0.7) { // 70%概率改变
+        t.vx = (Math.random() - 0.5) * 0.6
+        t.vy = (Math.random() - 0.5) * 0.6
+      }
+    }
+  }
+
+  /* 整体平移，保持大小不变 */
+  for (const t of triangles) {
+    t.a.x += t.vx
+    t.a.y += t.vy
+    t.b.x += t.vx
+    t.b.y += t.vy
+    t.c.x += t.vx
+    t.c.y += t.vy
+  }
+
+  /* 填充三角形 */
+  for (const t of triangles) {
     const avgGlow = (t.a.glow + t.b.glow + t.c.glow) / 3
-    if (avgGlow < 0.05) continue
-    const color = `rgba(65,209,255,${avgGlow * 0.9})`
-    drawLine(t.a, t.b, color)
-    drawLine(t.b, t.c, color)
-    drawLine(t.c, t.a, color)
-  }
-
-  /* 3. 画顶点 */
-  for (const d of dots) {
-    if (d.glow < 0.05) continue
+    if (avgGlow < 0.01) continue
+    const cx = (t.a.x + t.b.x + t.c.x) / 3
+    const cy = (t.a.y + t.b.y + t.c.y) / 3
+    const hue = (200 + avgGlow * 100 + time * 20 + cx * 0.05 + cy * 0.05) % 360 // 添加位置因子，增加形状多样性
+    const saturation = 90 + avgGlow * 10 // 更高饱和度
+    const lightness = 70 + avgGlow * 30 // 更高亮度
+    const alpha = avgGlow * 1.0 // 满透明度，使颜色更明晰
+    ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`
     ctx.beginPath()
-    ctx.arc(d.x, d.y, 2 + d.glow * 1.5, 0, Math.PI * 2)
-    ctx.fillStyle = `rgba(255,255,255,${d.glow})`
+    ctx.moveTo(t.a.x, t.a.y)
+    ctx.lineTo(t.b.x, t.b.y)
+    ctx.lineTo(t.c.x, t.c.y)
+    ctx.closePath()
     ctx.fill()
+    // 添加边线，使更明显
+    ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${avgGlow * 0.7})`
+    ctx.lineWidth = 0.8
+    ctx.stroke()
   }
 
   raf = requestAnimationFrame(loop)
-}
-
-function drawLine (a: Dot, b: Dot, color: string) {
-  ctx.beginPath()
-  ctx.moveTo(a.x, a.y)
-  ctx.lineTo(b.x, b.y)
-  ctx.strokeStyle = color
-  ctx.stroke()
 }
 
 /* ---------- 生命周期 ---------- */
@@ -121,7 +142,7 @@ onMounted(() => {
     mouse.x = e.clientX
     mouse.y = e.clientY
   })
-  loop()
+  loop(0)
 })
 
 onUnmounted(() => {

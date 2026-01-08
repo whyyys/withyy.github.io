@@ -4,7 +4,7 @@ import type { DefaultTheme } from 'vitepress';
 // https://vitepress.dev/reference/site-config
 
 const base = "/";
-const logo = '/logo/token-branded--uwu.svg';
+const logo = "/logo/token-branded--uwu.svg";
 const socialLinks: DefaultTheme.SocialLink[] = [
   { icon: 'github', link: 'https://github.com/whyyys' },
   {
@@ -23,7 +23,6 @@ export default defineConfig({
       label: '简体中文',
       title: 'YysDocs',
       description: '歪歪只是随便写写...',
-      head: [['link', { rel: 'icon', href: logo }]],
       themeConfig: {
         nav: nav('zh'),
         sidebar: sidebar('zh'),
@@ -88,6 +87,10 @@ export default defineConfig({
       }
     }
   },
+  head: [
+    ['link', { rel: 'icon', href: '/logo/favicon.ico', sizes: '32x32' }],
+    ['link', { rel: 'icon', href: '/logo/favicon.svg', type: 'image/svg+xml' }],
+  ],
   themeConfig: {
     logo: logo,
     // siteTitle: 'Hello World'
@@ -102,43 +105,115 @@ export default defineConfig({
 function nav(locale: string): DefaultTheme.NavItem[] {
   if (locale === 'en') {
     return [
-      { text: 'Guide', link: '/markdown-examples', activeMatch: '/markdown-examples' },
-      { text: 'API Examples', link: '/api-examples', activeMatch: '/api-examples' },
+      { text: 'Guide', link: '/en/guide/markdown-examples', activeMatch: '/en/markdown-examples' },
+      { text: 'API Examples', link: '/en/guide/api-examples', activeMatch: '/en/api-examples' },
+      {
+        text: 'Large Language Models',
+        items: [
+          { text: 'Preface', link: '/en/LLM/preface', activeMatch: '/en/LLM/preface' },
+        ]
+      },
+      {
+        text: 'LeetCode',
+        items: [
+          { text: 'Daily Problem', link: '/en/leetcode/everyday', activeMatch: '/en/leetcode/everyday' },
+          {
+            text: 'Specialized Practice',
+            items: [
+              { text: 'Sliding Window', link: '/en/leetcode/sliding-window', activeMatch: '/en/leetcode/sliding-window' },
+              { text: 'Two Pointers', link: '/en/leetcode/two-pointers', activeMatch: '/en/leetcode/two-pointers' }
+            ]
+          }
+        ]
+      },
     ];
   }
   return [
-    { text: '指南', link: '/markdown-examples', activeMatch: '/markdown-examples' },
-    { text: 'API 示例', link: '/api-examples', activeMatch: '/api-examples' },
+    { text: '指南', link: '/guide/markdown-examples', activeMatch: '/guide/markdown-examples' },
+    { text: 'API 示例', link: '/guide/api-examples', activeMatch: '/guide/api-examples' },
     {
         text: '大模型',
         items: [
-          { text: '前言', link: '/LLM/preface' },
+          { text: '前言', link: '/LLM/preface', activeMatch: '/LLM/preface' },
         ]
-      }
+    },
+    {
+        text: '力扣力扣',
+        items: [
+          { text: '每日一题', link: '/leetcode/everyday', activeMatch: '/leetcode/everyday' },
+          {
+            text: '专项练习',
+            items: [
+              { text: '滑动窗口', link: '/leetcode/sliding-window', activeMatch: '/leetcode/sliding-window' },
+              { text: '双指针', link: '/leetcode/two-pointers', activeMatch: '/leetcode/two-pointers' }
+            ]
+          }
+        ]
+    },
   ];
 }
 
 function sidebar(locale: string): DefaultTheme.Sidebar {
   if (locale === 'en') {
-    return [
+    return {
+      '/en/guide/': [
+        {
+          text: 'Guide',
+          items: [
+            { text: 'Markdown Examples', link: '/en/markdown-examples' },
+            { text: 'Runtime API Examples', link: '/en/api-examples' }
+          ]
+        },
+      ],
+      '/en/LLM/': [
+        {
+          text: 'Large Language Models',
+          items: [
+            { text: 'Preface', link: '/en/LLM/preface' },
+          ]
+        }
+      ],
+      '/en/leetcode/': [
+        {
+          text: 'LeetCode',
+          items: [
+            { text: 'Daily Problem', link: '/en/leetcode/everyday' },
+            { text: 'Sliding Window', link: '/en/leetcode/sliding-window' },
+            { text: 'Two Pointers', link: '/en/leetcode/two-pointers' }
+          ]
+        }
+      ]
+    };
+  }
+  return {
+    '/guide/': [
+        {
+          text: '指南',
+          items: [
+            { text: 'Markdown 示例', link: '/markdown-examples' },
+            { text: '运行时 API 示例', link: '/api-examples' }
+          ]
+        },
+      ],
+    '/LLM/': [
       {
-        text: 'Guide',
+        text: '大模型',
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          { text: '前言', link: '/LLM/preface' },
         ]
       }
-    ];
-  }
-  return [
-    {
-      text: '指南',
-      items: [
-        { text: 'Markdown 示例', link: '/markdown-examples' },
-        { text: '运行时 API 示例', link: '/api-examples' }
-      ]
-    }
-  ];
+    ],
+    '/leetcode/': [
+      {
+        text: '力扣力扣',
+        items: [
+          { text: '每日一题', link: '/leetcode/everyday' },
+          { text: '滑动窗口', link: '/leetcode/sliding-window' },
+          { text: '双指针', link: '/leetcode/two-pointers' }
+        ]
+      }
+    ]
+  };
 }
 
 

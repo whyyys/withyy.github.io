@@ -34,3 +34,9 @@ features:
     details: 深度学习入门 <br> ( RNN / GNN 计划复现中......
 ---
 
+
+<script setup>
+import WaterFlowCanvas from '../.vitepress/theme/components/WaterFlowCanvas.vue'
+</script>
+
+<WaterFlowCanvas />
