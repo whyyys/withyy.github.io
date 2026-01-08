@@ -7,8 +7,8 @@ hero:
   text: CS & AI
   tagline: Today we hold the long rope, <br> &nbsp;&nbsp; when will we bind the dragon?
   image:
-    dark: /logo/token-branded--crvusd.svg
-    light: /logo/token-branded--crv.svg
+    dark: ./logo/token-branded--crvusd.svg
+    light: ./logo/token-branded--crv.svg
     # alt: logo
   actions:
     - theme: brand
@@ -20,16 +20,16 @@ hero:
 
 features:
   - icon: 
-      src: /logo/gemini.svg
+      src: ./logo/gemini.svg
     title: NLP & LLM
     details: Notes and practices on large model learning <br> ( In progress...... )
   - icon:
-      dark: /logo/leetcode_light.svg
-      light: /logo/leetcode_dark.svg
+      dark: ./logo/leetcode_light.svg
+      light: ./logo/leetcode_dark.svg
     title: LeetCode
     details: LeetCode LeetCode <br> Have you solved today's problem?
   - icon:
-      src: /logo/token-branded--nexa.svg
+      src: ./logo/token-branded--nexa.svg
     title: Deep Learning
     details: Introduction to Deep Learning <br> ( RNN / GNN reproduction in progress...... )
 ---
