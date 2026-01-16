@@ -99,7 +99,14 @@ export default defineConfig({
   srcDir: "src",
   lastUpdated: true,
   vite: { server: {allowedHosts: true},
-          publicDir: "public" }
+          publicDir: "public" },
+  markdown: {
+    image: {
+      // 默认禁用；设置为 true 可为所有图片启用懒加载。
+      lazyLoading: true
+    },
+    math: true,
+  },
 })
 
 function nav(locale: string): DefaultTheme.NavItem[] {
@@ -135,6 +142,7 @@ function nav(locale: string): DefaultTheme.NavItem[] {
         text: '大模型',
         items: [
           { text: '前言', link: '/LLM/preface', activeMatch: '/LLM/preface' },
+          { text: 'Transformer 模型', link: '/LLM/Transformer', activeMatch: '/LLM/Transformer' }
         ]
     },
     {
@@ -147,7 +155,8 @@ function nav(locale: string): DefaultTheme.NavItem[] {
               { text: '滑动窗口', link: '/leetcode/sliding-window', activeMatch: '/leetcode/sliding-window' },
               { text: '双指针', link: '/leetcode/two-pointers', activeMatch: '/leetcode/two-pointers' }
             ]
-          }
+          },
+          {text: '工具函数', link: '/leetcode/tools', activeMatch: '/leetcode/tools'},
         ]
     },
   ];
@@ -160,8 +169,8 @@ function sidebar(locale: string): DefaultTheme.Sidebar {
         {
           text: 'Guide',
           items: [
-            { text: 'Markdown Examples', link: '/en/markdown-examples' },
-            { text: 'Runtime API Examples', link: '/en/api-examples' }
+            { text: 'Markdown Examples', link: '/en/guide/markdown-examples' },
+            { text: 'Runtime API Examples', link: '/en/guide/api-examples' }
           ]
         },
       ],
@@ -190,8 +199,8 @@ function sidebar(locale: string): DefaultTheme.Sidebar {
         {
           text: '指南',
           items: [
-            { text: 'Markdown 示例', link: '/markdown-examples' },
-            { text: '运行时 API 示例', link: '/api-examples' }
+            { text: 'Markdown 示例', link: '/guide/markdown-examples' },
+            { text: '运行时 API 示例', link: '/guide/api-examples' }
           ]
         },
       ],
@@ -209,7 +218,8 @@ function sidebar(locale: string): DefaultTheme.Sidebar {
         items: [
           { text: '每日一题', link: '/leetcode/everyday' },
           { text: '滑动窗口', link: '/leetcode/sliding-window' },
-          { text: '双指针', link: '/leetcode/two-pointers' }
+          { text: '双指针', link: '/leetcode/two-pointers' },
+          { text: '工具函数', link: '/leetcode/tools' },
         ]
       }
     ]
