@@ -42,23 +42,24 @@
 
 对于给定的 $W^q、W^k、W^v$ `n×n 维矩阵`（在训练时需要更新的参数），输入序列：
 $$I= \begin{bmatrix}
-\\
-\mathit{A_1} \quad \mathit{A_2} \quad \mathit{A_3} ...\\
-\\
+\quad \mathit{A_1} \quad \\
+\quad \mathit{A_2} \quad \\
+\quad \mathit{A_3} \quad \\
+...\\
 \end{bmatrix}$$
-其中 $\mathit{A_i}$ 是输入序列的第 i 个词的词嵌入`列向量`。
+其中 $\mathit{A_i}$ 是输入序列的第 i 个词的词嵌入   `Embedding 向量`。
 
 对于每个输入向量 $\mathit{A_i}$，计算其 Query、Key、Value 向量：
 $$
-Q_i = W^q \cdot A_i,\quad
-K_i = W^k \cdot A_i,\quad
-V_i = W^v \cdot A_i
+Q_i = A_i \cdot W^q,\quad
+K_i = A_i \cdot W^k,\quad
+V_i = A_i \cdot W^v
 $$
-得到的 Query、Key、Value 矩阵依然是 `n 维列向量`。
+得到的 Query、Key、Value 矩阵依然是 `n 维向量`。
 
 接下来，计算输入序列中每个词对其他词的注意力权重。对于输入序列中的每个词 $\mathit{A_i}$，计算其 Query 向量 $Q_i$ 与所有词的 Key 向量 $K_j$ 的点积，得到注意力分数，然后通过 Softmax 函数归一化，得到注意力权重，公式化如下：
 $$
-\text{Attention}(Q_i, K_j) = \text{softmax}(K_j^T \cdot Q_i / \sqrt{d_k})
+\text{Attention}(Q_i, K_j) = \text{softmax}(Q_i^T \cdot K_j / \sqrt{d_k})
 $$
 其中，$d_k$ 是词向量的维度，$\sqrt{d_k}$ 是缩放因子，防止点积值过大导致Softmax 函数梯度消失。
 
@@ -87,6 +88,39 @@ $$
 ![softmaxA](../image/softmaxA.png)
 
 ![attentionO](../image/attentionO.png)
+
+## Multi-Head Attention
+为了让模型能够关注输入序列的不同子空间信息，Transformer 引入了多头注意力机制（Multi-Head Attention）。具体做法是将输入向量通过多个不同的线性变换，得到多个不同的 Query、Key、Value 矩阵，分别计算注意力，然后将各个头的输出进行拼接，最后通过线性变换得到最终输出。
+
+输入序列 $I$ 的维度为 $(\text{sequence\_length}, d_{\text{model}})$，注意力头的数量为 $h$。
+
+每个头的 Query、Key、Value 矩阵分别通过权重矩阵 $W_i^q, W_i^k, W_i^v$ 进行线性变换。
+$$
+W_i^q \in \mathbb{R}^{d_{\text{model}} \times d_k}\\
+W_i^k \in \mathbb{R}^{d_{\text{model}} \times d_k}\\
+W_i^v \in \mathbb{R}^{d_{\text{model}} \times d_v}\\
+d_k = d_v = d_{\text{model}} / h
+$$
+第 $i$ 个头的输出为：
+$$
+\text{head}_i = \text{Attention}(I \cdot W_i^q, I \cdot W_i^k, I \cdot W_i^v)
+$$
+输出维度为 $(\text{sequence\_length}, d_v)$。
+
+将所有 $h$ 个头的输出拼接：
+$$
+\text{Concat}(\text{head}_1, \text{head}_2, ..., \text{head}_h)
+$$
+拼接后的维度为 $(\text{sequence\_length}, h \cdot d_v)$。
+
+通过权重矩阵 $W^o \in \mathbb{R}^{(h \cdot d_v) \times d_{\text{model}}}$ 进行线性变换：
+$$
+\text{MultiHead}(I) = \text{Concat}(\text{head}_1, \text{head}_2, ..., \text{head}_h) \cdot W^o
+$$
+最终输出维度为 $(\text{sequence\_length}, d_{\text{model}})$。
+
+多头注意力机制通过将高维输入拆分为多个低维子空间并行计算，能够捕获不同子空间的信息，同时保持输出维度与输入维度一致，便于后续的残差连接和层归一化操作。
+
 
 ## Positional Encoding
 
@@ -119,3 +153,57 @@ $$
 $$
 \text{InputEmbedding} = \text{WordEmbedding} + \text{PositionalEncoding}
 $$
+
+## Transformer Architecture
+
+Transformer 编码器层由多头自注意力机制（Multi-Head Self-Attention）和前馈神经网络（Feed-Forward Neural Network）两部分组成。每个编码器层还包含残差连接（Residual Connection）和层归一化（Layer Normalization）操作，以促进梯度传播和模型训练。
+
+解码器层在编码器的基础上增加了掩码多头自注意力机制（Masked Multi-Head Self-Attention），用于防止解码器在生成序列时访问未来的信息。
+
+![transformerarch](../image/transformerarch.png)
+
+## Add&Norm
+
+在每个子层（如多头注意力和前馈神经网络）之后，Transformer 使用残差连接和层归一化来稳定训练过程。具体步骤如下：
+
+**残差连接（Residual Connection）**：将子层的输入直接添加到子层的输出上，形成残差连接。这有助于缓解深层网络中的梯度消失问题。
+   $$
+   \text{ResidualOutput} = \text{Input} + \text{SubLayerOutput}
+   $$
+
+**层归一化（Layer Normalization）**：对残差连接的输出进行层归一化，以标准化特征分布，进一步稳定训练过程。
+    $$
+    Norm(x) = \frac{X - \mu}{\sigma} \cdot \gamma + \beta
+    $$
+其中，$\mu$ 和 $\sigma$ 分别是输入 $X$ 的均值和标准差，$\gamma$ 和 $\beta$ 是可学习的参数。
+
+## Encoder Model
+
+编码器模型仅使用 Transformer 模型的编码器部分。在每次计算过程中，注意力层都能访问整个句子的所有单词，这些模型通常具有“双向”（向前/向后）注意力，被称为自编码模型。
+
+这些模型的预训练通常会使用某种方式破坏给定的句子（例如：通过随机遮盖其中的单词），并让模型寻找或重建给定的句子。
+
+“编码器”模型适用于需要理解完整句子的任务，例如：句子分类、命名实体识别（以及更普遍的单词分类）和阅读理解后回答问题。
+
+该系列模型的典型代表有：
+[ALBERT](https://arxiv.org/abs/1909.11942)、[BERT](https://arxiv.org/abs/1810.04805)、[DistilBERT](https://arxiv.org/abs/1910.01108)、[ELECTRA](https://arxiv.org/abs/2003.10555) 和 [RoBERTa](https://arxiv.org/abs/1907.11692)
+
+## Decoder Model
+
+解码器模型仅使用 Transformer 模型的解码器部分。在每次计算过程中，注意力层只能访问当前单词之前的单词，这些模型通常具有“单向”注意力，被称为自回归模型。
+
+“解码器”模型的预训练通常围绕预测句子中的下一个单词进行。
+
+这些模型最适合处理文本生成的任务。
+
+该系列模型的典型代表有：[CTRL](https://arxiv.org/abs/1909.05858)、[GPT](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf)、[GPT-2](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)、[Transformer XL](https://arxiv.org/abs/1901.02860) 和 [XLNet](https://arxiv.org/abs/1906.08237)
+
+## Encoder-Decoder Model
+
+编码器-解码器模型同时使用 Transformer 模型的编码器和解码器部分。在每次计算过程中，编码器的注意力层可以访问整个句子的所有单词，而解码器的注意力层只能访问当前单词之前的单词。
+
+这些模型的预训练可以使用训练编码器或解码器模型的方式来完成，但通常会更加复杂。例如， T5 通过用单个掩码特殊词替换随机文本范围（可能包含多个词）进行预训练，然后目标是预测被遮盖单词原始的文本。
+
+序列到序列模型最适合于围绕根据给定输入生成新句子的任务，如摘要、翻译或生成性问答。
+
+该系列模型的典型代表有：[BART](https://arxiv.org/abs/1910.13461)、[mBART](https://arxiv.org/abs/2001.08210)、[Marian](https://arxiv.org/abs/1911.02116) 和 [T5](https://arxiv.org/abs/1910.10683)
